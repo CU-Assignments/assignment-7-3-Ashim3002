@@ -1,0 +1,187 @@
+Step 1: Student Class
+
+public class Student {
+    private int studentID;
+    private String name;
+    private String department;
+    private double marks;
+
+    public Student(int studentID, String name, String department, double marks) {
+        this.studentID = studentID;
+        this.name = name;
+        this.department = department;
+        this.marks = marks;
+    }
+
+    public int getStudentID() { return studentID; }
+    public void setStudentID(int studentID) { this.studentID = studentID; }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+    public String getDepartment() { return department; }
+    public void setDepartment(String department) { this.department = department; }
+    public double getMarks() { return marks; }
+    public void setMarks(double marks) { this.marks = marks; }
+}
+
+
+Step 2: Create the Database Table
+
+CREATE TABLE Students (
+    StudentID INT PRIMARY KEY,
+    Name VARCHAR(100),
+    Department VARCHAR(100),
+    Marks DOUBLE
+);
+
+
+Step 3: Implement the Controller
+
+import java.sql.*;
+
+public class StudentController {
+    private Connection connection;
+
+    public StudentController() {
+        try {
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/your_database", "username", "password");
+        } catch (ClassNotFoundException | SQLException e) {
+            System.out.println("Error connecting to database: " + e.getMessage());
+        }
+    }
+
+    public void createStudent(Student student) {
+        try {
+            PreparedStatement statement = connection.prepareStatement("INSERT INTO Students (StudentID, Name, Department, Marks) VALUES (?, ?, ?, ?)");
+            statement.setInt(1, student.getStudentID());
+            statement.setString(2, student.getName());
+            statement.setString(3, student.getDepartment());
+            statement.setDouble(4, student.getMarks());
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            System.out.println("Error creating student record: " + e.getMessage());
+        }
+    }
+
+    public void readStudents() {
+        try {
+            Statement statement = connection.createStatement();
+            ResultSet resultSet = statement.executeQuery("SELECT * FROM Students");
+            while (resultSet.next()) {
+                System.out.println("StudentID: " + resultSet.getInt("StudentID") +
+                                   ", Name: " + resultSet.getString("Name") +
+                                   ", Department: " + resultSet.getString("Department") +
+                                   ", Marks: " + resultSet.getDouble("Marks"));
+            }
+        } catch (SQLException e) {
+            System.out.println("Error reading student records: " + e.getMessage());
+        }
+    }
+
+    public void updateStudent(Student student) {
+        try {
+            PreparedStatement statement = connection.prepareStatement("UPDATE Students SET Name = ?, Department = ?, Marks = ? WHERE StudentID = ?");
+            statement.setString(1, student.getName());
+            statement.setString(2, student.getDepartment());
+            statement.setDouble(3, student.getMarks());
+            statement.setInt(4, student.getStudentID());
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            System.out.println("Error updating student record: " + e.getMessage());
+        }
+    }
+
+    public void deleteStudent(int studentID) {
+        try {
+            PreparedStatement statement = connection.prepareStatement("DELETE FROM Students WHERE StudentID = ?");
+            statement.setInt(1, studentID);
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            System.out.println("Error deleting student record: " + e.getMessage());
+        }
+    }
+}
+
+
+Step 4: Implement the View
+
+import java.util.Scanner;
+
+public class StudentView {
+    private StudentController controller;
+    private Scanner scanner;
+
+    public StudentView(StudentController controller) {
+        this.controller = controller;
+        this.scanner = new Scanner(System.in);
+    }
+
+    public void displayMenu() {
+        while (true) {
+            System.out.println("1. Create Student");
+            System.out.println("2. Read Students");
+            System.out.println("3. Update Student");
+            System.out.println("4. Delete Student");
+            System.out.println("5. Exit");
+            System.out.print("Choose an option: ");
+            int option = scanner.nextInt();
+            switch (option) {
+                case 1:
+                    createStudent();
+                    break;
+                case 2:
+                    controller.readStudents();
+                    break;
+                case 3:
+                    updateStudent();
+                    break;
+                case 4:
+                    deleteStudent();
+                    break;
+                case 5:
+                    System.exit(0);
+                    break;
+                default:
+                    System.out.println("Invalid option. Please choose again.");
+            }
+        }
+    }
+
+    private void createStudent() {
+        System.out.print("Enter StudentID: ");
+        int studentID = scanner.nextInt();
+        System.out.print("Enter Name: ");
+        String name = scanner.next();
+        System.out.print("Enter Department: ");
+        String department = scanner.next();
+        System.out.print("Enter Marks: ");
+        double marks = scanner.nextDouble();
+        Student student = new Student(studentID, name, department, marks);
+        controller.createStudent(student);
+    }
+
+    private void updateStudent() {
+        System.out.print("Enter StudentID: ");
+        int studentID = scanner.nextInt();
+        System.out.print("Enter Name: ");
+        String name = scanner.next();
+        System.out.print("Enter Department: ");
+        String department = scanner.next();
+        System.out.print("Enter Marks: ");
+        double marks = scanner.nextDouble();
+        Student student = new Student(studentID, name, department, marks);
+        controller.updateStudent(student);
+    }
+
+    private void deleteStudent() {
+        System.out.print("Enter StudentID to delete: ");
+        int studentID = scanner.nextInt();
+        controller.deleteStudent(studentID);
+    }
+
+    public static void main(String[] args) {
+        StudentController controller = new StudentController();
+        StudentView view = new StudentView(controller);
+        view.displayMenu();
+    }
+}
